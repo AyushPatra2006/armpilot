@@ -1,0 +1,51 @@
+# --- Python (backend) ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+venv/
+.venv/
+env/
+.Python
+*.env
+.env.*
+
+# --- Node / React (frontend) ---
+node_modules/
+dist/
+build/
+.next/
+.turbo/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# --- Data / DB / logs (don't commit generated data or secrets) ---
+data/*.db
+data/*.sqlite3
+data/logs/*
+data/benchmarks/*
+!data/logs/.gitkeep
+!data/benchmarks/.gitkeep
+
+# --- Ollama / model artifacts (never commit model weights) ---
+*.gguf
+*.bin
+models/
+
+# --- Demo fallback assets (large video/screenshots - optional, uncomment if too big for repo) ---
+# demo/fallback_assets/*
+# !demo/fallback_assets/.gitkeep
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+
+# --- Misc ---
+*.log
+.pytest_cache/
+coverage/
