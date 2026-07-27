@@ -5,10 +5,15 @@ Pure calculation helpers for ArmPilot's benchmarking module.
 No I/O, no side effects — these functions take numbers in and return
 numbers out, which makes them trivial to unit test and safe to call
 from benchmark_runner.py, the FastAPI routes, or a notebook.
+
+Includes:
+  - Dashboard helpers: calculate_improvement, summarize_run (before/after charts)
+  - Runtime helper: BenchmarkMetrics dataclass (single-model trial samples)
 """
 
 from __future__ import annotations
 
+from dataclasses import asdict, dataclass
 from typing import TypedDict
 
 
@@ -18,30 +23,24 @@ class ImprovementResult(TypedDict):
     improvement: float
 
 
+@dataclass
+class BenchmarkMetrics:
+    tokens_per_second: float
+    time_to_first_token: float
+    latency: float
+    cpu_utilization: float | None = None
+    memory_usage_gb: float | None = None
+    battery_pct: float | None = None
+    swap_usage_gb: float | None = None
+
+    def as_dict(self):
+        return asdict(self)
+
+
 def calculate_improvement(baseline_speed: float, optimized_speed: float) -> ImprovementResult:
     """
     Calculate the percentage improvement between a baseline and an
     optimized measurement (e.g. tokens/sec, ms latency, MB memory).
-
-    Args:
-        baseline_speed: The metric value before optimization.
-        optimized_speed: The metric value after optimization.
-
-    Returns:
-        A dict shaped like:
-            {
-                "baseline_speed": 30,
-                "optimized_speed": 45,
-                "improvement": 50.0
-            }
-
-    Raises:
-        ValueError: if baseline_speed is 0 or negative, since percentage
-            improvement is undefined in that case.
-
-    Example:
-        >>> calculate_improvement(30, 45)
-        {'baseline_speed': 30, 'optimized_speed': 45, 'improvement': 50.0}
     """
     if baseline_speed <= 0:
         raise ValueError("baseline_speed must be greater than 0 to compute a percentage improvement")
@@ -58,12 +57,7 @@ def calculate_improvement(baseline_speed: float, optimized_speed: float) -> Impr
 def calculate_memory_reduction(baseline_mb: float, optimized_mb: float) -> ImprovementResult:
     """
     Same idea as calculate_improvement, but for metrics where LOWER is
-    better (memory usage, latency, power draw). Returns a positive
-    number when the optimized value is smaller (i.e. an improvement).
-
-    Example:
-        >>> calculate_memory_reduction(8000, 5200)
-        {'baseline_speed': 8000, 'optimized_speed': 5200, 'improvement': 35.0}
+    better (memory usage, latency, power draw).
     """
     if baseline_mb <= 0:
         raise ValueError("baseline_mb must be greater than 0 to compute a percentage reduction")
@@ -81,12 +75,6 @@ def summarize_run(baseline: dict, optimized: dict) -> dict:
     """
     Build the full before/after summary the dashboard's BenchmarkCharts
     component expects, given raw baseline/optimized benchmark records.
-
-    Both `baseline` and `optimized` are dicts like:
-        {"model": "Qwen3 INT8", "tokens_per_sec": 30, "memory_mb": 8000}
-
-    Returns a dict ready to be returned directly from the /api/benchmark
-    route or dropped into calculate_improvement()'s consumers.
     """
     speed = calculate_improvement(
         baseline_speed=baseline["tokens_per_sec"],
